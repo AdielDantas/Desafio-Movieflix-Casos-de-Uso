@@ -2,6 +2,7 @@ package com.devsuperior.movieflix.services;
 
 import com.devsuperior.movieflix.dto.ReviewDTO;
 import com.devsuperior.movieflix.entities.Review;
+import com.devsuperior.movieflix.entities.User;
 import com.devsuperior.movieflix.repositories.MovieRepository;
 import com.devsuperior.movieflix.repositories.ReviewRepository;
 import com.devsuperior.movieflix.repositories.UserRepository;
@@ -22,24 +23,26 @@ public class ReviewService {
     @Autowired
     private UserRepository userRepository;
 
+    @Autowired
+    private AuthService authService;
+
     @Transactional
     public ReviewDTO insert(ReviewDTO dto) {
         Review review = new Review();
         copyDtoToEntity(dto, review);
+
+        User user = authService.authenticated();
+        review.setUser(user);
+
         review = repository.save(review);
         return new ReviewDTO(review);
     }
 
+
     private void copyDtoToEntity(ReviewDTO dto, Review review) {
         review.setText(dto.getText());
-
-        var movie = movieRepository.findById(dto.getMovieId())
-                .orElseThrow(() -> new ResourceNotFoundException("Movie not found"));
-
-        var user = userRepository.findById(dto.getUserId())
-                .orElseThrow(() -> new ResourceNotFoundException("User not found"));
-
-        review.setMovie(movie);
-        review.setUser(user);
+        review.setMovie(movieRepository.findById(dto.getMovieId())
+                .orElseThrow(() -> new ResourceNotFoundException("Movie not found")));
     }
+
 }
